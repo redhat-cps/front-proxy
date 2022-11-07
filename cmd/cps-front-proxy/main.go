@@ -24,6 +24,9 @@ import (
 	"os"
 	"time"
 
+	frontproxyoptions "github.com/kcp-dev/kcp/cmd/kcp-front-proxy/options"
+	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
+	"github.com/kcp-dev/kcp/pkg/proxy"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -33,10 +36,6 @@ import (
 	utilflag "k8s.io/component-base/cli/flag"
 	_ "k8s.io/component-base/logs/json/register"
 	"k8s.io/component-base/version"
-
-	frontproxyoptions "github.com/kcp-dev/kcp/cmd/kcp-front-proxy/options"
-	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
-	"github.com/kcp-dev/kcp/pkg/proxy"
 )
 
 func main() {

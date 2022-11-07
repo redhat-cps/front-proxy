@@ -53,3 +53,58 @@ install:
 clean:
 	rm -f bin/*
 .PHONY: clean
+
+
+GO_INSTALL = ./hack/go-install.sh
+
+TOOLS_DIR=hack/tools
+TOOLS_GOBIN_DIR := $(abspath $(TOOLS_DIR))
+GOBIN_DIR=$(abspath ./bin )
+PATH := $(GOBIN_DIR):$(TOOLS_GOBIN_DIR):$(PATH)
+TMPDIR := $(shell mktemp -d)
+
+OPENSHIFT_GOIMPORTS_VER := c72f1dc2e3aacfa00aece3391d938c9bc734e791
+OPENSHIFT_GOIMPORTS_BIN := openshift-goimports
+OPENSHIFT_GOIMPORTS := $(TOOLS_DIR)/$(OPENSHIFT_GOIMPORTS_BIN)-$(OPENSHIFT_GOIMPORTS_VER)
+export OPENSHIFT_GOIMPORTS # so hack scripts can use it
+
+$(OPENSHIFT_GOIMPORTS):
+	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) github.com/openshift-eng/openshift-goimports $(OPENSHIFT_GOIMPORTS_BIN) $(OPENSHIFT_GOIMPORTS_VER)
+
+imports: $(OPENSHIFT_GOIMPORTS)
+	$(OPENSHIFT_GOIMPORTS) -m github.com/redhat-cps/front-proxy
+.PHONY: imports
+
+# Note, running this locally if you have any modified files, even those that are not generated,
+# will result in an error. This target is mostly for CI jobs.
+.PHONY: verify-imports
+verify-imports:
+	$(MAKE) imports
+
+	if ! git diff --quiet HEAD; then \
+		git diff; \
+		echo "You need to run 'make imports' to update formatted files and commit them"; \
+		exit 1; \
+	fi
+
+GOLANGCI_LINT_VER := v1.49.0
+GOLANGCI_LINT_BIN := golangci-lint
+GOLANGCI_LINT := $(TOOLS_DIR)/$(GOLANGCI_LINT_BIN)-$(GOLANGCI_LINT_VER)
+
+$(GOLANGCI_LINT):
+	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint $(GOLANGCI_LINT_BIN) $(GOLANGCI_LINT_VER)
+
+lint: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run --timeout=10m ./...
+
+$(TOOLS_DIR)/verify_boilerplate.py:
+	mkdir -p $(TOOLS_DIR)
+	curl --fail --retry 3 -L -o $(TOOLS_DIR)/verify_boilerplate.py https://raw.githubusercontent.com/kubernetes/repo-infra/master/hack/verify_boilerplate.py
+	chmod +x $(TOOLS_DIR)/verify_boilerplate.py
+
+.PHONY: verify-boilerplate
+verify-boilerplate: $(TOOLS_DIR)/verify_boilerplate.py
+	$(TOOLS_DIR)/verify_boilerplate.py --boilerplate-dir=hack/boilerplate
+
+tools: $(OPENSHIFT_GOIMPORTS) $(GOLANGCI_LINT) $(TOOLS_DIR)/verify_boilerplate.py
+.PHONY: tools
