@@ -33,6 +33,13 @@ LDFLAGS := \
 	-X k8s.io/component-base/version.gitMinor=${KUBE_MINOR_VERSION} \
 	-X k8s.io/component-base/version.buildDate=${BUILD_DATE}
 
+COUNT ?=
+COUNT_ARG =
+ifdef COUNT
+COUNT_ARG = -count $(COUNT)
+endif
+GO_TEST = go test
+
 all: build
 .PHONY: all
 
@@ -108,3 +115,8 @@ verify-boilerplate: $(TOOLS_DIR)/verify_boilerplate.py
 
 tools: $(OPENSHIFT_GOIMPORTS) $(GOLANGCI_LINT) $(TOOLS_DIR)/verify_boilerplate.py
 .PHONY: tools
+
+.PHONY: test
+test: WHAT ?= ./...
+test:
+	$(GO_TEST) -race $(COUNT_ARG) -coverprofile=coverage.txt -covermode=atomic $(TEST_ARGS) $$(go list "$(WHAT)")

@@ -17,3 +17,6 @@
 # Locally built binaries
 bin/
 hack/tools/
+
+# Test output
+coverage.txt
