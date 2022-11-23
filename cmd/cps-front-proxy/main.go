@@ -24,9 +24,7 @@ import (
 	"os"
 	"time"
 
-	frontproxyoptions "github.com/kcp-dev/kcp/cmd/kcp-front-proxy/options"
 	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
-	"github.com/kcp-dev/kcp/pkg/proxy"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -36,6 +34,9 @@ import (
 	utilflag "k8s.io/component-base/cli/flag"
 	_ "k8s.io/component-base/logs/json/register"
 	"k8s.io/component-base/version"
+
+	frontproxyoptions "github.com/redhat-cps/front-proxy/cmd/cps-front-proxy/options"
+	"github.com/redhat-cps/front-proxy/pkg/proxy"
 )
 
 func main() {
@@ -71,12 +72,12 @@ routed based on paths.`,
 				return errors.NewAggregate(errs)
 			}
 
-			if options.Proxy.ProfilerAddress != "" {
+			if options.CPSProxy.KCPProxyOptions.ProfilerAddress != "" {
 				//nolint:errcheck
-				go http.ListenAndServe(options.Proxy.ProfilerAddress, nil)
+				go http.ListenAndServe(options.CPSProxy.KCPProxyOptions.ProfilerAddress, nil)
 			}
 
-			config, err := proxy.NewConfig(options.Proxy)
+			config, err := proxy.NewConfig(options.CPSProxy)
 			if err != nil {
 				return err
 			}
