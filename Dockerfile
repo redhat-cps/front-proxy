@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Build the binary
-FROM golang:1.18 AS builder
+FROM golang:1.19 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -35,10 +35,7 @@ COPY .git/ .git/
 RUN apt-get update && apt-get install -y jq && mkdir bin
 RUN CGO_ENABLED=0 make
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-# FROM gcr.io/distroless/static:nonroot
-FROM alpine:3.15
-WORKDIR /
-COPY --from=builder workspace/bin/cps-front-proxy /
-ENTRYPOINT ["/cps-front-proxy"]
+# Uses centos image to align with https://github.com/openshift/release/pull/34657
+FROM quay.io/centos/centos:stream8
+COPY --from=builder workspace/bin/cps-front-proxy /usr/bin/cps-front-proxy
+ENTRYPOINT ["/usr/bin/cps-front-proxy"]
